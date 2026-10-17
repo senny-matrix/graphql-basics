@@ -1,11 +1,9 @@
 import { createServer } from "node:http";
 import { createSchema, createYoga } from "graphql-yoga";
 
-// 1. Create a Post type
-// 2. Add id, title, body, and published to the Post type (all non-nullable)
-// 3. Define a "post" query that returns a single post
-// 4. Set up the resolver method to return some post data
-// 5. Test out the query
+// 1. Create an add query that returns a float
+// 2. Setup add to take two arguments (a, b) which are required floats
+// 3. Have the resolver send back the sum of two arguments
 
 // Type definitions (Schema)
 const typeDefs = /* GraphQL */ `
