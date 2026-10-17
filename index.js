@@ -1,28 +1,28 @@
-import { createServer } from 'node:http';
-import { createSchema, createYoga } from 'graphql-yoga';
+import { createServer } from "node:http";
+import { createSchema, createYoga } from "graphql-yoga";
 
+// Create Query definition and resolver for each
+//
+// title - string - product name
+// price - number as float
+// releaseYear - number as integer (optional)
+// rating - number as float (optional)
+// isStock - boolean
+//
 // Type definitions (Schema)
 const typeDefs = /* GraphQL */ `
   type Query {
-    hello: String!
-    name: String!
-    location: String!
-    bio: String
+
   }
 `;
 
 // Resolve API
 const resolvers = {
-  Query: {
-    hello: () => 'Hello World, this is my first query',
-    name: () => 'My name is Rogers',
-    location: () => 'I am based in Tanzania',
-    bio: () => 'I am a software engineer'
-  }
+  Query: {},
 };
 
 const yoga = createYoga({
-  schema: createSchema({ typeDefs, resolvers })
+  schema: createSchema({ typeDefs, resolvers }),
 });
 
 const server = createServer(yoga);
