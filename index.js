@@ -1,15 +1,12 @@
 import { createServer } from "node:http";
 import { createSchema, createYoga } from "graphql-yoga";
 
-// 1. Create an add query that returns a float
-// 2. Setup add to take two arguments (a, b) which are required floats
-// 3. Have the resolver send back the sum of two arguments
-
 // Type definitions (Schema)
 const typeDefs = /* GraphQL */ `
   type Query {
-    add(a: Float!, b: Float!): Float!
+    add(numbers: [Float!]!): Float!
     greeting(name: String): String!
+    grades: [Int!]!
     me: User!
     post: Post!
   }
@@ -32,8 +29,15 @@ const typeDefs = /* GraphQL */ `
 // Resolve API
 const resolvers = {
   Query: {
-    add(parent, args, ctx, info) {
-      return args.a + args.b;
+    add(parent, args) {
+      if (args.numbers.length === 0) {
+        return 0;
+      }
+
+      return args.numbers.reduce(
+        (accumulator, currentValue) => accumulator + currentValue,
+        0,
+      );
     },
     greeting(parent, args, ctx, info) {
       if (args.name) {
@@ -42,7 +46,9 @@ const resolvers = {
         return `Hello!`;
       }
     },
-
+    grades(parent, args, ctx, info) {
+      return [99, 80, 93];
+    },
     me() {
       return {
         id: "123-abc",
