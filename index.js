@@ -1,12 +1,29 @@
 import { createServer } from "node:http";
 import { createSchema, createYoga } from "graphql-yoga";
 
+// Demo users data
+const users = [
+  {
+    id: "1",
+    name: "Rogers",
+    email: "rogers@microskills.ac.tz",
+    age: 45,
+  },
+  {
+    id: "2",
+    name: "Senny",
+    email: "senny@microskills.ac.tz",
+  },
+  {
+    id: "3",
+    name: "Kalibwanyigi",
+    email: "kali@microskills.ac.tz",
+  },
+];
 // Type definitions (Schema)
 const typeDefs = /* GraphQL */ `
   type Query {
-    add(numbers: [Float!]!): Float!
-    greeting(name: String): String!
-    grades: [Int!]!
+    users: [User!]!
     me: User!
     post: Post!
   }
@@ -29,25 +46,8 @@ const typeDefs = /* GraphQL */ `
 // Resolve API
 const resolvers = {
   Query: {
-    add(parent, args) {
-      if (args.numbers.length === 0) {
-        return 0;
-      }
-
-      return args.numbers.reduce(
-        (accumulator, currentValue) => accumulator + currentValue,
-        0,
-      );
-    },
-    greeting(parent, args, ctx, info) {
-      if (args.name) {
-        return `Hello ${args.name}!`;
-      } else {
-        return `Hello!`;
-      }
-    },
-    grades(parent, args, ctx, info) {
-      return [99, 80, 93];
+    users(parent, args, ctx, info) {
+      return users;
     },
     me() {
       return {
