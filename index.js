@@ -49,11 +49,31 @@ const posts = [
     author: "2",
   },
 ];
+
+const comments = [
+  {
+    id: "102",
+    text: "This worked well for me! Thanks.",
+  },
+  {
+    id: "103",
+    text: "Glad you enjoyed it.",
+  },
+  {
+    id: "104",
+    text: "This did not work",
+  },
+  {
+    id: "105",
+    text: "Never mind, I got it to work",
+  },
+];
 // Type definitions (Schema)
 const typeDefs = /* GraphQL */ `
   type Query {
     users(query: String): [User!]!
     posts(query: String): [Post!]!
+    comments: [Comment!]!
     me: User!
     post: Post!
   }
@@ -72,6 +92,11 @@ const typeDefs = /* GraphQL */ `
     body: String!
     published: Boolean!
     author: User!
+  }
+
+  type Comment {
+    id: ID!
+    text: String!
   }
 `;
 
@@ -100,6 +125,9 @@ const resolvers = {
 
         return isTitleMatch || isBodyMatch;
       });
+    },
+    comments: (parent, args, ctx, info) => {
+      return comments;
     },
     me() {
       return {
