@@ -27,18 +27,21 @@ const posts = [
     title: "GraphQL 101",
     body: "This is how you use GraphQL ...",
     published: true,
+    author: '1',
   },
   {
     id: "11",
     title: "GraphQL 201",
     body: "This is how you use an advanced GraphQL ...",
     published: false,
+    author: '1',
   },
   {
     id: "12",
     title: "Programming music 101",
     body: "This is how you program music ...",
     published: true,
+    author: '2',
   },
 ];
 // Type definitions (Schema)
@@ -62,6 +65,7 @@ const typeDefs = /* GraphQL */ `
     title: String!
     body: String!
     published: Boolean!
+    author: User!
   }
 `;
 
@@ -90,11 +94,8 @@ const resolvers = {
           .toLowerCase()
           .includes(args.query.toLowerCase());
 
-        return isTitleMatch || isBodyMatch
+        return isTitleMatch || isBodyMatch;
       });
-
-
-      const isBodyMatch =
     },
     me() {
       return {
@@ -110,9 +111,17 @@ const resolvers = {
         title: "GraphQL 101",
         body: "A training about GraphQL for beginners",
         published: false,
+        author: "1",
       };
     },
   },
+  Post: {
+    author(parent, args, ctx, info) {
+      return users.find((user) => {
+        return user.id === parent.author
+      })
+    }
+  }
 };
 
 const yoga = createYoga({
