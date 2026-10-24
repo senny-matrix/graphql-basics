@@ -92,9 +92,6 @@ const resolvers = {
 
         return isTitleMatch || isBodyMatch
       });
-
-
-      const isBodyMatch =
     },
     me() {
       return {
