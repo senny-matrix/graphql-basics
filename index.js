@@ -1,6 +1,18 @@
 import { createServer } from "node:http";
 import { createSchema, createYoga } from "graphql-yoga";
 
+// Your challenge
+// 1. Set up an array of three posts with dummy post data (id, title, body, published)
+//
+// 2. Set up a "posts" query and receiver that returns all the posts
+//
+// 3. Test the query out
+//
+// 4. Add a query argument that only returns posts that contains that query string in the title or body
+//
+// 5. Run a few sample queries searching for posts with a specific title
+//
+
 // Demo users data
 const users = [
   {
