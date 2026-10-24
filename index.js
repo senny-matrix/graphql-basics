@@ -1,16 +1,8 @@
 import { createServer } from "node:http";
 import { createSchema, createYoga } from "graphql-yoga";
 
-// Challenge Part 2
-// Goal | Set up relationship between comment and user
-// 1. Set up an author field in the comment
-// 2. Update all comments in the array to have a new author field (use on of the user ids as value)
-// 3. Create a resolver for the Comments author field that returns the user who wrote the comment.
-// 4. Run a sample query that gets all comments and gets the author's name
-// 5. Set up a comment field on User
-// 6. Setup a resolver for the User comments field that returns all comments belonging to that user
-// 7. Run a sample query that get all users and all their comments
-//
+// Challenge Part 2 - Solution
+
 // Demo users data
 const users = [
   {
@@ -59,18 +51,22 @@ const comments = [
   {
     id: "102",
     text: "This worked well for me! Thanks.",
+    author: "3",
   },
   {
     id: "103",
     text: "Glad you enjoyed it.",
+    author: "1",
   },
   {
     id: "104",
     text: "This did not work",
+    author: "2",
   },
   {
     id: "105",
     text: "Never mind, I got it to work",
+    author: "1",
   },
 ];
 
@@ -90,6 +86,7 @@ const typeDefs = /* GraphQL */ `
     email: String!
     age: Int
     posts: [Post!]!
+    comments: [Comment!]!
   }
 
   type Post {
@@ -103,6 +100,7 @@ const typeDefs = /* GraphQL */ `
   type Comment {
     id: ID!
     text: String!
+    author: User!
   }
 `;
 
@@ -160,10 +158,22 @@ const resolvers = {
       });
     },
   },
+  Comment: {
+    author(parent, args, ctx, info) {
+      return users.find((user) => {
+        return user.id === parent.author;
+      });
+    },
+  },
   User: {
     posts(parent, args, ctx, info) {
       return posts.filter((post) => {
         return post.author === parent.id;
+      });
+    },
+    comments(parent, args, ctx, info) {
+      return comments.filter((comment) => {
+        return comment.author === parent.id;
       });
     },
   },
