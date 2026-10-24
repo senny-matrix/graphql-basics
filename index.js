@@ -27,21 +27,21 @@ const posts = [
     title: "GraphQL 101",
     body: "This is how you use GraphQL ...",
     published: true,
-    author: '1',
+    author: "1",
   },
   {
     id: "11",
     title: "GraphQL 201",
     body: "This is how you use an advanced GraphQL ...",
     published: false,
-    author: '1',
+    author: "1",
   },
   {
     id: "12",
     title: "Programming music 101",
     body: "This is how you program music ...",
     published: true,
-    author: '2',
+    author: "2",
   },
 ];
 // Type definitions (Schema)
@@ -58,6 +58,7 @@ const typeDefs = /* GraphQL */ `
     name: String!
     email: String!
     age: Int
+    posts: [Post!]!
   }
 
   type Post {
@@ -84,13 +85,11 @@ const resolvers = {
     posts(parent, args, ctx, info) {
       if (!args.query) return posts;
       return posts.filter((post) => {
-        const isTitleMatch = post
-          .title
+        const isTitleMatch = post.title
           .toLowerCase()
           .includes(args.query.toLowerCase());
 
-        const isBodyMatch = post
-          .body
+        const isBodyMatch = post.body
           .toLowerCase()
           .includes(args.query.toLowerCase());
 
@@ -118,10 +117,18 @@ const resolvers = {
   Post: {
     author(parent, args, ctx, info) {
       return users.find((user) => {
-        return user.id === parent.author
-      })
-    }
-  }
+        return user.id === parent.author;
+      });
+    },
+  },
+
+  User: {
+    posts(parent, args, ctx, info) {
+      return posts.filter((post) => {
+        return post.author === parent.id;
+      });
+    },
+  },
 };
 
 const yoga = createYoga({
