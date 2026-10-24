@@ -32,10 +32,32 @@ const users = [
     email: "kali@microskills.ac.tz",
   },
 ];
+
+const posts = [
+  {
+    id: "10",
+    title: "GraphQL 101",
+    body: "This is how you use GraphQL ...",
+    published: true,
+  },
+  {
+    id: "11",
+    title: "GraphQL 201",
+    body: "This is how you use an advanced GraphQL ...",
+    published: false,
+  },
+  {
+    id: "12",
+    title: "Programming music 101",
+    body: "This is how you program music ...",
+    published: true,
+  },
+];
 // Type definitions (Schema)
 const typeDefs = /* GraphQL */ `
   type Query {
     users(query: String): [User!]!
+    posts: [Post!]!
     me: User!
     post: Post!
   }
@@ -66,6 +88,9 @@ const resolvers = {
       return users.filter((user) => {
         return user.name.toLowerCase().includes(args.query.toLowerCase());
       });
+    },
+    posts(parent, args, ctx, info) {
+      return posts;
     },
     me() {
       return {
