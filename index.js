@@ -1,7 +1,13 @@
 import { createServer } from "node:http";
 import { createSchema, createYoga } from "graphql-yoga";
 
-// Challenge Part 2 - Solution
+// Challenge Part 3
+// Goal | Setup relationship between Comment and Post
+//
+// 1. Set up a Post field on comment
+// 2. Update all comments in the array to have a new post field (use one of the post id as the value)
+// 3. Create a resolver for the Comment post field that returns the post that the comment belongs to
+//
 
 // Demo users data
 const users = [
@@ -52,21 +58,25 @@ const comments = [
     id: "102",
     text: "This worked well for me! Thanks.",
     author: "3",
+    post: "10",
   },
   {
     id: "103",
     text: "Glad you enjoyed it.",
     author: "1",
+    post: "10",
   },
   {
     id: "104",
     text: "This did not work",
     author: "2",
+    post: "11",
   },
   {
     id: "105",
     text: "Never mind, I got it to work",
     author: "1",
+    post: "11",
   },
 ];
 
@@ -95,12 +105,14 @@ const typeDefs = /* GraphQL */ `
     body: String!
     published: Boolean!
     author: User!
+    comments: [Comment!]!
   }
 
   type Comment {
     id: ID!
     text: String!
     author: User!
+    post: Post!
   }
 `;
 
@@ -157,11 +169,21 @@ const resolvers = {
         return user.id === parent.author;
       });
     },
+    comments(parent, args, ctx, info) {
+      return comments.filter((comment) => {
+        return comment.post === parent.id;
+      });
+    },
   },
   Comment: {
     author(parent, args, ctx, info) {
       return users.find((user) => {
         return user.id === parent.author;
+      });
+    },
+    post(parent, args, ctx, info) {
+      return posts.find((post) => {
+        return post.id === parent.post;
       });
     },
   },
@@ -176,6 +198,7 @@ const resolvers = {
         return comment.author === parent.id;
       });
     },
+    
   },
 };
 
