@@ -1,13 +1,6 @@
 import { createServer } from "node:http";
+import { randomUUID } from "node:crypto";
 import { createSchema, createYoga } from "graphql-yoga";
-
-// Challenge Part 3
-// Goal | Setup relationship between Comment and Post
-//
-// 1. Set up a Post field on comment
-// 2. Update all comments in the array to have a new post field (use one of the post id as the value)
-// 3. Create a resolver for the Comment post field that returns the post that the comment belongs to
-//
 
 // Demo users data
 const users = [
@@ -90,6 +83,10 @@ const typeDefs = /* GraphQL */ `
     post: Post!
   }
 
+  type Mutation {
+    createUser(name: String!, email: String!, age: Int): User!
+  }
+
   type User {
     id: ID!
     name: String!
@@ -163,6 +160,27 @@ const resolvers = {
       };
     },
   },
+
+  Mutation: {
+    createUser(parent, args, ctx, info) {
+      const emailTaken = users.some((user) => {
+        return user.email === args.email;
+      });
+
+      if (emailTaken) {
+        throw new Error("Email already taken");
+      }
+      
+      const id = randomUUID();
+      const user = {
+        id,
+        ...args,
+      };
+      users.push(user);
+      return user;
+    },
+  },
+  
   Post: {
     author(parent, args, ctx, info) {
       return users.find((user) => {
