@@ -2,6 +2,21 @@ import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { createSchema, createYoga } from "graphql-yoga";
 
+//
+// Goal | Allow clients to create a new comment
+// 
+// 1. Define a new createComment mutation
+//    - Should take text, author, and post
+//    - Should return the created comment
+// 2. Define resolvers for the createComment mutation
+//    - Confirm that the user exists, else throw error
+//    - Confirm that the post exists, else throw error
+//    - If they do exist, create the comment and return it
+// 3. Run the mutation and add a comment
+// 4. Use the comment query to verify the comment was added
+
+
+
 // Demo users data
 const users = [
   {
@@ -85,6 +100,8 @@ const typeDefs = /* GraphQL */ `
 
   type Mutation {
     createUser(name: String!, email: String!, age: Int): User!
+    createPost(title: String!, body: String!, published: Boolean!, author: ID!): Post!
+    createComment(text: String!, author: ID!, post: ID!): Comment!
   }
 
   type User {
@@ -178,6 +195,50 @@ const resolvers = {
       };
       users.push(user);
       return user;
+    },
+
+    createPost(parent, args, ctx, info) {
+      const userExists = users.some((user) => {
+        return user.id === args.author;
+      });
+
+      if (!userExists) {
+        throw new Error("Author not found");
+      }
+      
+      const id = randomUUID();
+      const post = {
+        id,
+        ...args,
+      };
+      posts.push(post);
+      return post;
+    },
+
+    createComment(parent, args, ctx, info) {
+      const userExists = users.some((user) => {
+        return user.id === args.author;
+      });
+
+      if (!userExists) {
+        throw new Error("User not found");
+      }
+
+      const postExists = posts.some((post) => {
+        return post.id === args.post && post.published;
+      });
+
+      if (!postExists) {
+        throw new Error("Post not found");
+      }
+      
+      const id = randomUUID();
+      const comment = {
+        id,
+        ...args,
+      };
+      comments.push(comment);
+      return comment;
     },
   },
   
