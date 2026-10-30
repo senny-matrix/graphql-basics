@@ -95,6 +95,7 @@ const typeDefs = /* GraphQL */ `
 
   type Mutation {
     createUser(data: CreateUserInput!): User!
+    deleteUser(id: ID!): User!
     createPost(data: CreatePostInput!): Post!
     createComment(data: CreateCommentInput!): Comment!
   }
@@ -254,6 +255,20 @@ const resolvers = {
       comments.push(comment);
       return comment;
     },
+
+    deleteUser(parent, args, ctx, info){
+      const userIndex = users.findIndex((user) => {
+        return user.id === args.id;
+      });
+
+      if (userIndex === -1) {
+        throw new Error("User not found");
+      }
+
+      const deletedUser = users[userIndex];
+      users.splice(userIndex, 1);
+      return deletedUser;
+    }
   },
   
   Post: {
