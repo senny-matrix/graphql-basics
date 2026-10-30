@@ -1,22 +1,17 @@
-import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import { createServer } from "node:http";
 import { createSchema, createYoga } from "graphql-yoga";
 
 //
-// Goal | Allow clients to create a new comment
-// 
-// 1. Define a new createComment mutation
-//    - Should take text, author, and post
-//    - Should return the created comment
-// 2. Define resolvers for the createComment mutation
-//    - Confirm that the user exists, else throw error
-//    - Confirm that the post exists, else throw error
-//    - If they do exist, create the comment and return it
-// 3. Run the mutation and add a comment
-// 4. Use the comment query to verify the comment was added
-
-
-
+// Goal | Create input type for createPost and createComment
+//
+// 1. Create an input type for createPost with the same fields. Use "data" or "post" for arg name.
+// 2. Uppdate createPost resolver to use this new object.
+// 3. Verify application still works by creating a post and then fetching it.
+// 4. Create an input type for createComment with the same fields. Use "data" or "comment" for arg name.
+// 5. Update createComment resolver to use this new object.
+// 6. Verify application still works by creating a comment and then fetching it.
+//
 // Demo users data
 const users = [
   {
@@ -99,9 +94,15 @@ const typeDefs = /* GraphQL */ `
   }
 
   type Mutation {
-    createUser(name: String!, email: String!, age: Int): User!
+    createUser(data: CreateUserInput): User!
     createPost(title: String!, body: String!, published: Boolean!, author: ID!): Post!
     createComment(text: String!, author: ID!, post: ID!): Comment!
+  }
+
+  input CreateUserInput {
+    name: String!
+    email: String!
+    age: Int
   }
 
   type User {
@@ -181,7 +182,7 @@ const resolvers = {
   Mutation: {
     createUser(parent, args, ctx, info) {
       const emailTaken = users.some((user) => {
-        return user.email === args.email;
+        return user.email === args.data.email;
       });
 
       if (emailTaken) {
@@ -191,7 +192,7 @@ const resolvers = {
       const id = randomUUID();
       const user = {
         id,
-        ...args,
+        ...args.data,
       };
       users.push(user);
       return user;
