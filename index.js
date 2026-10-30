@@ -94,15 +94,28 @@ const typeDefs = /* GraphQL */ `
   }
 
   type Mutation {
-    createUser(data: CreateUserInput): User!
-    createPost(title: String!, body: String!, published: Boolean!, author: ID!): Post!
-    createComment(text: String!, author: ID!, post: ID!): Comment!
+    createUser(data: CreateUserInput!): User!
+    createPost(data: CreatePostInput!): Post!
+    createComment(data: CreateCommentInput!): Comment!
   }
 
   input CreateUserInput {
     name: String!
     email: String!
     age: Int
+  }
+
+  input CreatePostInput {
+    title: String!
+    body: String!
+    published: Boolean!
+    author: ID!
+  }
+
+  input CreateCommentInput {
+    text: String!
+    author: ID!
+    post: ID!
   }
 
   type User {
@@ -200,7 +213,7 @@ const resolvers = {
 
     createPost(parent, args, ctx, info) {
       const userExists = users.some((user) => {
-        return user.id === args.author;
+        return user.id === args.data.author;
       });
 
       if (!userExists) {
@@ -210,7 +223,7 @@ const resolvers = {
       const id = randomUUID();
       const post = {
         id,
-        ...args,
+        ...args.data,
       };
       posts.push(post);
       return post;
@@ -218,7 +231,7 @@ const resolvers = {
 
     createComment(parent, args, ctx, info) {
       const userExists = users.some((user) => {
-        return user.id === args.author;
+        return user.id === args.data.author;
       });
 
       if (!userExists) {
@@ -226,7 +239,7 @@ const resolvers = {
       }
 
       const postExists = posts.some((post) => {
-        return post.id === args.post && post.published;
+        return post.id === args.data.post && post.published;
       });
 
       if (!postExists) {
@@ -236,7 +249,7 @@ const resolvers = {
       const id = randomUUID();
       const comment = {
         id,
-        ...args,
+        ...args.data,
       };
       comments.push(comment);
       return comment;
