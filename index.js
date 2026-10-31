@@ -13,7 +13,7 @@ import { createSchema, createYoga } from "graphql-yoga";
 // 6. Verify application still works by creating a comment and then fetching it.
 //
 // Demo users data
-const users = [
+let users = [
   {
     id: "1",
     name: "Rogers",
@@ -32,7 +32,7 @@ const users = [
   },
 ];
 
-const posts = [
+let posts = [
   {
     id: "10",
     title: "GraphQL 101",
@@ -56,7 +56,7 @@ const posts = [
   },
 ];
 
-const comments = [
+let comments = [
   {
     id: "102",
     text: "This worked well for me! Thanks.",
@@ -267,6 +267,18 @@ const resolvers = {
 
       const deletedUser = users[userIndex];
       users.splice(userIndex, 1);
+
+      posts = posts.filter((post) => {
+        const match = post.author === args.id;
+        if (match){
+          comments = comments.filter((comment) => {
+            return comment.post !== post.id
+          });
+        }
+        return !match
+      });
+
+      comments = comments.filter((comment) => comment.author !== args.id);
       return deletedUser;
     }
   },
