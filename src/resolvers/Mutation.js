@@ -22,18 +22,22 @@ const Mutation = {
     updateUser(parent, args, {db}, info) {
         const { id, data } = args;
         const user = db.users.find((user) => user.id === id);
+
         if (!user) throw new Error("User not found");
 
-        if(typeof data.email === 'string'){
-            const emailTaken = db.users.some((user) => user.email === data.email);
+        if (typeof data.email === "string") {
+            const emailTaken = db.users.some((user) => {
+                return user.email === data.email && user.id !== id;
+            });
+
             if (emailTaken) throw new Error("Email already taken");
+            user.email = data.email;
         }
 
-        if(typeof data.name === "string") user.name = data.name;
-        user.email = data.email;
+        if (typeof data.name === "string") user.name = data.name;
 
-        if(typeof data.age !== 'undefined') user.age = data.age;
-        
+        if (typeof data.age !== "undefined") user.age = data.age;
+
         return user;
     },
 
@@ -81,6 +85,28 @@ const Mutation = {
       return post;
     },
 
+    updatePost(parent, args, {db}, info) {
+        const { id, data } = args;
+        const post = db.posts.find((post) => post.id === id);
+
+        if (!post) throw new Error("Post not found!");
+
+        if (typeof data.author === "string") {
+            const userExists = db.users.some((user) => user.id === data.author);
+
+            if (!userExists) throw new Error("Author not found");
+            post.author = data.author;
+        }
+
+        if (typeof data.title === "string") post.title = data.title;
+
+        if (typeof data.body === "string") post.body = data.body;
+
+        if (typeof data.published === "boolean") post.published = data.published;
+
+        return post;
+    },
+
     deletePost(parent, args, {db}, info) {
       // Check if the Post exists
       const postIndex = db.posts.findIndex((post) => post.id === args.id);
@@ -117,6 +143,17 @@ const Mutation = {
       };
       db.comments.push(comment);
       return comment;
+    },
+
+    updateComment(parent, args, {db}, info) {
+        const { id, data } = args;
+        const comment = db.comments.find((comment) => comment.id === id);
+
+        if (!comment) throw new Error("Comment not found!");
+
+        if (typeof data.text === "string") comment.text = data.text;
+
+        return comment;
     },
 
     deleteComment(parent, args, {db}, info) {
