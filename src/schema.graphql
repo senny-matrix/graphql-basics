@@ -19,7 +19,7 @@ type Mutation {
     deleteComment(id: ID!): Comment!
 }
 
-type Subscription { 
+type Subscription {
     comment(postId: ID!): Comment!
     post: PostSubscriptionPayload!
 }
