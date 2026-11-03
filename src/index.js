@@ -26,6 +26,9 @@ const typeDefs = readFileSync(new URL('./schema.graphql', import.meta.url), 'utf
 const yoga = createYoga({
   schema: createSchema({ typeDefs, resolvers }),
   context: () => ({ db, pubsub }),
+  // Learning project: always surface the real error message instead of a generic
+  // "Unexpected error." so validation failures are visible in GraphiQL.
+  maskedErrors: false,
 });
 
 const server = createServer(yoga);
