@@ -96,9 +96,10 @@ const Mutation = {
     updatePost(parent, args, {db, pubsub}, info) {
         const { id, data } = args;
         const post = db.posts.find((post) => post.id === id);
-        const originalPost = {...post};
 
         if (!post) throw new Error("Post not found!");
+
+        const originalPost = {...post};
 
         if (typeof data.author === "string") {
             const userExists = db.users.some((user) => user.id === data.author);
@@ -131,9 +132,17 @@ const Mutation = {
                 data: post
               }
             });
+          }else if (originalPost.published && post.published){
+            // update on an already-published post
+            pubsub.publish('post', {
+              post: {
+                mutation: 'UPDATED',
+                data: post
+              }
+            });
           }
-        }else if (data.published){
-          // update
+        }else if (post.published){
+          // update of title/body/author on a published post (published flag untouched)
           pubsub.publish('post', {
             post: {
               mutation: 'UPDATED',
