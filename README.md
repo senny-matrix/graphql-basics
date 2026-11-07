@@ -12,6 +12,53 @@ One repo, two runnable halves:
 Nitro proxies `/graphql` from the frontend to the API, so the browser only ever
 talks to one origin. That is why the API needs no CORS setup.
 
+## Where to start (the first lesson)
+
+`main` is the **finished** app. If you want the very first lesson instead — the
+bare GraphQL server before any schema or database work — check out its branch:
+
+```bash
+git clone git@github.com:senny-matrix/graphql-basics.git
+cd graphql-basics
+git switch 00-initial_graphql_server
+```
+
+That leaves you with just `index.js` (a minimal GraphQL Yoga server) and its
+`package.json`. It is the starting point for the whole course.
+
+**Quick-start (clone that lesson directly, no switching):**
+
+```bash
+git clone -b 00-initial_graphql_server git@github.com:senny-matrix/graphql-basics.git
+```
+
+> **For HTTPS users:** replace `git@github.com:senny-matrix/…` with
+> `https://github.com/senny-matrix/…` in the commands above.
+
+**The lesson branches.** Every commit that built this app is tagged as a branch,
+in order, so you can follow the course one step at a time:
+
+```bash
+git branch -r | sort          # list them all
+# 00-initial_graphql_server
+# 01-graphql_scalar_types
+# 02-check_your_self
+# ...
+# 32-update_sub
+# dev  (same starting point as 00-initial_graphql_server)
+```
+
+To sit on a lesson and do your own work on top of it:
+
+```bash
+git switch 13-relationship        # move to that lesson
+vim src/schema.graphql            # edit freely
+git switch -c my-solution         # (optional) keep your work on a branch
+```
+
+> Note: `dev` and `00-initial_graphql_server` point at the **same** commit
+> (`5b083df`, the very first one), so either works as the starting point.
+
 ## First run
 
 ```bash
