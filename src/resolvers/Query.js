@@ -69,6 +69,20 @@ const Query = {
     async me(parent, args, { prisma }, info) {
       return prisma.user.findFirst();
     },
+
+    // Aggregate counts. `count()` is a single `SELECT COUNT(*)`, so the
+    // dashboard gets its numbers without transferring any rows at all.
+    async userCount(parent, args, { prisma }, info) {
+      return prisma.user.count();
+    },
+
+    async postCount(parent, args, { prisma }, info) {
+      return prisma.post.count();
+    },
+
+    async commentCount(parent, args, { prisma }, info) {
+      return prisma.comment.count();
+    },
 };
 
 export default Query;

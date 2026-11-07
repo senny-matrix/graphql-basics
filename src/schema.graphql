@@ -6,6 +6,12 @@ type Query {
     user(id: ID!): User
     post(id: ID!): Post
     me: User
+
+    # Cheap aggregate queries. A dashboard that only needs "how many" should
+    # not download every row (and every relation) just to call .length on it.
+    userCount: Int!
+    postCount: Int!
+    commentCount: Int!
 }
 
 type Mutation {
