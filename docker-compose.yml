@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:18.0
+    container_name: graphql_basics_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-graphql}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-graphql}
+      POSTGRES_DB: ${POSTGRES_DB:-graphql_basics}
+    ports:
+      # Bound to 127.0.0.1 so the DB is reachable from this machine only
+      # (not exposed on the LAN). The app connects via localhost:5432.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # postgres:18 declares /var/lib/postgresql as its volume and keeps data in
+      # /var/lib/postgresql/18/docker (PGDATA), so mount the parent, not .../data.
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-graphql} -d ${POSTGRES_DB:-graphql_basics}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  pgadmin:
+    image: dpage/pgadmin4:9.19.0
+    container_name: graphql_basics_pgadmin
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      # Don't spam for the latest release on every login.
+      PGADMIN_CONFIG_UPGRADE_CHECK_ENABLED: "False"
+    ports:
+      # Bound to 127.0.0.1 so only this machine can open the GUI.
+      - "127.0.0.1:5050:80"
+    volumes:
+      # Keeps the saved server list / preferences across restarts.
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+  pgadmin_data:

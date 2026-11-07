@@ -11,13 +11,22 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js --ext js,graphql"
+    "dev": "nodemon src/index.js --ext js,graphql",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "node prisma/seed.js"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "dotenv": "^18.0.9",
+    "nodemon": "^3.1.14",
+    "prisma": "^7.10.1"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "graphql": "^16.11.0",
-    "graphql-yoga": "^5.24.6"
+    "graphql-yoga": "^5.24.6",
+    "pg": "^8.23.1"
   }
 }

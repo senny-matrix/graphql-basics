@@ -1,0 +1,40 @@
+// Prisma schema for graphql_basics
+// Note: the datasource block intentionally has no `url`.
+// In Prisma 7 the connection string is supplied via prisma7.config.ts
+// (for the CLI) and src/prisma.js (for the running application).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  name     String
+  email    String    @unique
+  age      Int?
+  posts    Post[]
+  comments Comment[]
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  title     String
+  body      String
+  published Boolean   @default(false)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  Int
+  comments  Comment[]
+}
+
+model Comment {
+  id       Int    @id @default(autoincrement())
+  text     String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId Int
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId   Int
+}
