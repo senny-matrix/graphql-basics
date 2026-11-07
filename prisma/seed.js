@@ -39,14 +39,15 @@ async function main() {
 
   // createMany() with explicit ids does not advance the SERIAL sequences,
   // so the next auto-generated id would collide. Push each sequence past the max.
+  // Table names must match the @@map() values in schema.prisma.
   await prisma.$executeRawUnsafe(
-    `SELECT setval(pg_get_serial_sequence('"User"', 'id'),    (SELECT COALESCE(MAX(id), 1) FROM "User"))`
+    `SELECT setval(pg_get_serial_sequence('users', 'id'),    (SELECT COALESCE(MAX(id), 1) FROM users))`
   );
   await prisma.$executeRawUnsafe(
-    `SELECT setval(pg_get_serial_sequence('"Post"', 'id'),    (SELECT COALESCE(MAX(id), 1) FROM "Post"))`
+    `SELECT setval(pg_get_serial_sequence('posts', 'id'),    (SELECT COALESCE(MAX(id), 1) FROM posts))`
   );
   await prisma.$executeRawUnsafe(
-    `SELECT setval(pg_get_serial_sequence('"Comment"', 'id'), (SELECT COALESCE(MAX(id), 1) FROM "Comment"))`
+    `SELECT setval(pg_get_serial_sequence('comments', 'id'), (SELECT COALESCE(MAX(id), 1) FROM comments))`
   );
 
   const [users, posts, comments] = await Promise.all([
