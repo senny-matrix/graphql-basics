@@ -1,10 +1,14 @@
-// Every query is now async: Prisma talks to Postgres, and every database
-// round trip returns a Promise. GraphQL awaits resolvers for us, so the
-// schema and the queries clients send are unchanged.
+import { toId, toPagination } from "../utils.js";
+
+// Every query is async: Prisma talks to Postgres, and every database round
+// trip returns a Promise. GraphQL awaits resolvers for us, so the queries
+// clients send are unchanged.
 const Query = {
     async users(parent, args, { prisma }, info) {
+      const { take, skip } = toPagination(args);
+
       if (!args.query) {
-        return prisma.user.findMany();
+        return prisma.user.findMany({ take, skip });
       }
 
       // `mode: "insensitive"` is Postgres ILIKE; without it the search would
@@ -16,11 +20,15 @@ const Query = {
             mode: "insensitive",
           },
         },
+        take,
+        skip,
       });
     },
 
     async posts(parent, args, { prisma }, info) {
-      if (!args.query) return prisma.post.findMany();
+      const { take, skip } = toPagination(args);
+
+      if (!args.query) return prisma.post.findMany({ take, skip });
 
       return prisma.post.findMany({
         where: {
@@ -29,30 +37,37 @@ const Query = {
             { body: { contains: args.query, mode: "insensitive" } },
           ],
         },
+        take,
+        skip,
       });
     },
 
     async comments(parent, args, { prisma }, info) {
-      return prisma.comment.findMany();
+      const { take, skip } = toPagination(args);
+
+      return prisma.comment.findMany({ take, skip });
     },
 
-    // `me` is a placeholder for "the logged-in user" until auth exists.
-    // It used to return a hardcoded object with the fake id "123-abc", which
-    // Prisma-backed relations cannot follow, so it now returns a real row.
-    async me(parent, args, { prisma }, info) {
-      const user = await prisma.user.findFirst();
+    // Single-record lookups. Both return a nullable type on purpose: asking
+    // for an id that does not exist is a normal outcome, so the client gets
+    // `null` and can show "not found" without treating it as an error.
+    async user(parent, args, { prisma }, info) {
+      const id = toId(args.id);
 
-      if (!user) throw new Error("No users in the database");
-
-      return user;
+      return prisma.user.findUnique({ where: { id } });
     },
 
     async post(parent, args, { prisma }, info) {
-      const post = await prisma.post.findFirst();
+      const id = toId(args.id);
 
-      if (!post) throw new Error("No posts in the database");
+      return prisma.post.findUnique({ where: { id } });
+    },
 
-      return post;
+    // `me` is a placeholder for "the logged-in user" until auth exists.
+    // It returns a nullable User so an empty database yields `null` rather
+    // than a "Cannot return null for non-nullable field" error.
+    async me(parent, args, { prisma }, info) {
+      return prisma.user.findFirst();
     },
 };
 
