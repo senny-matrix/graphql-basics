@@ -9,7 +9,7 @@ function isUniqueViolation(error) {
 }
 
 const Mutation = {
-    async createUser(parent, args, { prisma }, info) {
+    async createUser(_parent, args, { prisma }) {
       const { data } = args;
 
       const emailTaken = await prisma.user.findUnique({
@@ -34,7 +34,7 @@ const Mutation = {
       }
     },
 
-    async updateUser(parent, args, { prisma }, info) {
+    async updateUser(_parent, args, { prisma }) {
         const id = toId(args.id);
         const { data } = args;
 
@@ -66,7 +66,7 @@ const Mutation = {
         return prisma.user.update({ where: { id }, data: updates });
     },
 
-    async deleteUser(parent, args, { prisma }, info) {
+    async deleteUser(_parent, args, { prisma }) {
       const id = toId(args.id);
 
       const user = await prisma.user.findUnique({ where: { id } });
@@ -83,7 +83,7 @@ const Mutation = {
       return user;
     },
 
-    async createPost(parent, args, { prisma, pubsub }, info) {
+    async createPost(_parent, args, { prisma, pubsub }) {
       const { data } = args;
       const authorId = toId(data.author, "author");
 
@@ -113,7 +113,7 @@ const Mutation = {
       return post;
     },
 
-    async updatePost(parent, args, { prisma, pubsub }, info) {
+    async updatePost(_parent, args, { prisma, pubsub }) {
         const id = toId(args.id);
         const { data } = args;
 
@@ -182,7 +182,7 @@ const Mutation = {
         return post;
     },
 
-    async deletePost(parent, args, { prisma, pubsub }, info) {
+    async deletePost(_parent, args, { prisma, pubsub }) {
       const id = toId(args.id);
 
       // Check if the Post exists
@@ -206,7 +206,7 @@ const Mutation = {
       return post;
     },
 
-    async createComment(parent, args, { prisma, pubsub }, info) {
+    async createComment(_parent, args, { prisma, pubsub }) {
       const { data } = args;
       const authorId = toId(data.author, "author");
       const postId = toId(data.post, "post");
@@ -222,7 +222,7 @@ const Mutation = {
       // in-memory version had (it filtered on `post.published` too).
       const post = await prisma.post.findUnique({ where: { id: postId } });
 
-      if (!post || !post.published) {
+      if (!post?.published) {
         throw new Error("Post not found");
       }
 
@@ -243,7 +243,7 @@ const Mutation = {
       return comment;
     },
 
-    async updateComment(parent, args, { prisma, pubsub }, info) {
+    async updateComment(_parent, args, { prisma, pubsub }) {
         const id = toId(args.id);
         const { data } = args;
 
@@ -269,7 +269,7 @@ const Mutation = {
         return comment;
     },
 
-    async deleteComment(parent, args, { prisma, pubsub }, info) {
+    async deleteComment(_parent, args, { prisma, pubsub }) {
       const id = toId(args.id);
 
       const comment = await prisma.comment.findUnique({ where: { id } });
