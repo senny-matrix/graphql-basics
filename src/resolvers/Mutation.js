@@ -1,88 +1,108 @@
-import { randomUUID } from "node:crypto";
+import { toId } from "../utils.js";
+
+// Prisma throws PrismaClientKnownRequestError with code P2002 when a unique
+// constraint is violated. The pre-checks below keep the friendly messages the
+// API already returned; this helper is the safety net for the race between the
+// check and the insert.
+function isUniqueViolation(error) {
+  return error?.code === "P2002";
+}
 
 const Mutation = {
-    createUser(parent, args, {db}, info) {
-      const emailTaken = db.users.some((user) => {
-        return user.email === args.data.email;
+    async createUser(parent, args, { prisma }, info) {
+      const { data } = args;
+
+      const emailTaken = await prisma.user.findUnique({
+        where: { email: data.email },
       });
 
       if (emailTaken) {
         throw new Error("Email already taken");
       }
-      
-      const id = randomUUID();
-      const user = {
-        id,
-        ...args.data,
-      };
-      db.users.push(user);
-      return user;
+
+      try {
+        return await prisma.user.create({
+          data: {
+            name: data.name,
+            email: data.email,
+            age: data.age ?? null,
+          },
+        });
+      } catch (error) {
+        if (isUniqueViolation(error)) throw new Error("Email already taken");
+        throw error;
+      }
     },
 
-    updateUser(parent, args, {db}, info) {
-        const { id, data } = args;
-        const user = db.users.find((user) => user.id === id);
+    async updateUser(parent, args, { prisma }, info) {
+        const id = toId(args.id);
+        const { data } = args;
+
+        const user = await prisma.user.findUnique({ where: { id } });
 
         if (!user) throw new Error("User not found");
 
+        // Build the update explicitly: Prisma treats `undefined` as "leave this
+        // field alone", which is what we want for fields the client omitted.
+        // `typeof null !== "undefined"`, so an explicit `age: null` clears it.
+        const updates = {};
+
         if (typeof data.email === "string") {
-            const emailTaken = db.users.some((user) => {
-                return user.email === data.email && user.id !== id;
+            const emailTaken = await prisma.user.findFirst({
+                where: { email: data.email, NOT: { id } },
             });
 
             if (emailTaken) throw new Error("Email already taken");
-            user.email = data.email;
+            updates.email = data.email;
         }
 
-        if (typeof data.name === "string") user.name = data.name;
+        if (typeof data.name === "string") updates.name = data.name;
 
-        if (typeof data.age !== "undefined") user.age = data.age;
+        if (typeof data.age !== "undefined") updates.age = data.age;
 
-        return user;
+        // Nothing to change: skip the round trip, but still return the row.
+        if (Object.keys(updates).length === 0) return user;
+
+        return prisma.user.update({ where: { id }, data: updates });
     },
 
-    deleteUser(parent, args, {db}, info) {
-      const userIndex = db.users.findIndex((user) => {
-        return user.id === args.id;
-      });
+    async deleteUser(parent, args, { prisma }, info) {
+      const id = toId(args.id);
 
-      if (userIndex === -1) {
+      const user = await prisma.user.findUnique({ where: { id } });
+
+      if (!user) {
         throw new Error("User not found");
       }
 
-      const deletedUser = db.users[userIndex];
-      db.users.splice(userIndex, 1);
+      // No manual cascade any more: the foreign keys were created with
+      // ON DELETE CASCADE, so deleting the user removes its posts and
+      // comments inside a single database transaction.
+      await prisma.user.delete({ where: { id } });
 
-      db.posts = db.posts.filter((post) => {
-        const match = post.author === args.id;
-        if (match){
-          db.comments = db.comments.filter((comment) => {
-            return comment.post !== post.id
-          });
-        }
-        return !match
-      });
-
-      db.comments = db.comments.filter((comment) => comment.author !== args.id);
-      return deletedUser;
+      return user;
     },
 
-    createPost(parent, args, {db, pubsub}, info) {
-      const userExists = db.users.some((user) => {
-        return user.id === args.data.author;
-      });
+    async createPost(parent, args, { prisma, pubsub }, info) {
+      const { data } = args;
+      const authorId = toId(data.author, "author");
+
+      const userExists = await prisma.user.findUnique({ where: { id: authorId } });
 
       if (!userExists) {
         throw new Error("Author not found");
       }
-      
-      const id = randomUUID();
-      const post = {
-        id,
-        ...args.data,
-      };
-      db.posts.push(post);
-      if (args.data.published) {
+
+      const post = await prisma.post.create({
+        data: {
+          title: data.title,
+          body: data.body,
+          published: data.published,
+          authorId,
+        },
+      });
+
+      if (post.published) {
         pubsub.publish('post', {
           post: {
           mutation: 'CREATED',
@@ -93,28 +113,37 @@ const Mutation = {
       return post;
     },
 
-    updatePost(parent, args, {db, pubsub}, info) {
-        const { id, data } = args;
-        const post = db.posts.find((post) => post.id === id);
+    async updatePost(parent, args, { prisma, pubsub }, info) {
+        const id = toId(args.id);
+        const { data } = args;
 
-        if (!post) throw new Error("Post not found!");
+        const originalPost = await prisma.post.findUnique({ where: { id } });
 
-        const originalPost = {...post};
+        if (!originalPost) throw new Error("Post not found!");
+
+        const updates = {};
 
         if (typeof data.author === "string") {
-            const userExists = db.users.some((user) => user.id === data.author);
+            const authorId = toId(data.author, "author");
+            const userExists = await prisma.user.findUnique({ where: { id: authorId } });
 
             if (!userExists) throw new Error("Author not found");
-            post.author = data.author;
+            updates.authorId = authorId;
         }
 
-        if (typeof data.title === "string") post.title = data.title;
+        if (typeof data.title === "string") updates.title = data.title;
 
-        if (typeof data.body === "string") post.body = data.body;
+        if (typeof data.body === "string") updates.body = data.body;
+
+        if (typeof data.published === "boolean") updates.published = data.published;
+
+        // Skip the write when the client sent nothing, but keep the publish
+        // logic below working off the current row.
+        const post = Object.keys(updates).length === 0
+          ? originalPost
+          : await prisma.post.update({ where: { id }, data: updates });
 
         if (typeof data.published === "boolean") {
-
-          post.published = data.published;
 
           if (originalPost.published && !post.published){
             // delete
@@ -153,52 +182,59 @@ const Mutation = {
         return post;
     },
 
-    deletePost(parent, args, {db, pubsub}, info) {
+    async deletePost(parent, args, { prisma, pubsub }, info) {
+      const id = toId(args.id);
+
       // Check if the Post exists
-      const postIndex = db.posts.findIndex((post) => post.id === args.id);
+      const post = await prisma.post.findUnique({ where: { id } });
 
-      if (postIndex === -1) throw new Error("Post not found!");
+      if (!post) throw new Error("Post not found!");
 
-      const [deletedPost] = db.posts.splice(postIndex, 1);
+      // Comments cascade with the post (ON DELETE CASCADE), so there is no
+      // separate db.comments.filter step here any more.
+      await prisma.post.delete({ where: { id } });
 
-      db.comments = db.comments.filter((comment) => comment.post !== args.id);
-
-      if(deletedPost.published) {
+      if(post.published) {
         pubsub.publish('post', {
           post: {
             mutation: 'DELETED',
-            data: deletedPost
+            data: post
           }
         })
       }
 
-      return deletedPost;
+      return post;
     },
 
-    createComment(parent, args, {db, pubsub}, info) {
-      const userExists = db.users.some((user) => {
-        return user.id === args.data.author;
-      });
+    async createComment(parent, args, { prisma, pubsub }, info) {
+      const { data } = args;
+      const authorId = toId(data.author, "author");
+      const postId = toId(data.post, "post");
+
+      const userExists = await prisma.user.findUnique({ where: { id: authorId } });
 
       if (!userExists) {
         throw new Error("User not found");
       }
 
-      const postExists = db.posts.some((post) => {
-        return post.id === args.data.post && post.published;
-      });
+      // Comments are only allowed on published posts. A post that exists but
+      // is unpublished is reported as "not found", which is the behaviour the
+      // in-memory version had (it filtered on `post.published` too).
+      const post = await prisma.post.findUnique({ where: { id: postId } });
 
-      if (!postExists) {
+      if (!post || !post.published) {
         throw new Error("Post not found");
       }
-      
-      const id = randomUUID();
-      const comment = {
-        id,
-        ...args.data,
-      };
-      db.comments.push(comment);
-      pubsub.publish(`comment ${args.data.post}`, {
+
+      const comment = await prisma.comment.create({
+        data: {
+          text: data.text,
+          authorId,
+          postId,
+        },
+      });
+
+      pubsub.publish(`comment ${postId}`, {
         comment: {
           mutation: 'CREATED',
           data: comment
@@ -207,15 +243,23 @@ const Mutation = {
       return comment;
     },
 
-    updateComment(parent, args, {db, pubsub}, info) {
-        const { id, data } = args;
-        const comment = db.comments.find((comment) => comment.id === id);
+    async updateComment(parent, args, { prisma, pubsub }, info) {
+        const id = toId(args.id);
+        const { data } = args;
 
-        if (!comment) throw new Error("Comment not found!");
+        const existing = await prisma.comment.findUnique({ where: { id } });
 
-        if (typeof data.text === "string") comment.text = data.text;
+        if (!existing) throw new Error("Comment not found!");
 
-        pubsub.publish(`comment ${comment.post}`, {
+        const updates = {};
+
+        if (typeof data.text === "string") updates.text = data.text;
+
+        const comment = Object.keys(updates).length === 0
+          ? existing
+          : await prisma.comment.update({ where: { id }, data: updates });
+
+        pubsub.publish(`comment ${comment.postId}`, {
           comment: {
             mutation: 'UPDATED',
             data: comment
@@ -225,21 +269,23 @@ const Mutation = {
         return comment;
     },
 
-    deleteComment(parent, args, {db, pubsub}, info) {
-      const commentIndex = db.comments.findIndex((comment) => comment.id === args.id);
+    async deleteComment(parent, args, { prisma, pubsub }, info) {
+      const id = toId(args.id);
 
-      if (commentIndex === -1) throw new Error("Comment not found!");
+      const comment = await prisma.comment.findUnique({ where: { id } });
 
-      const [deletedComment] = db.comments.splice(commentIndex, 1);
+      if (!comment) throw new Error("Comment not found!");
 
-      pubsub.publish(`comment ${deletedComment.post}`, {
+      await prisma.comment.delete({ where: { id } });
+
+      pubsub.publish(`comment ${comment.postId}`, {
         comment: {
           mutation: 'DELETED',
-          data: deletedComment
+          data: comment
         }
       });
 
-      return deletedComment;
+      return comment;
     }
 }
 

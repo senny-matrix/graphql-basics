@@ -1,12 +1,20 @@
+import { toId } from "../utils.js";
 
 const Subscription = {
   comment: {
-    subscribe(parent, {postId}, { db, pubsub }, info) {
-        const post = db.posts.find(post => post.id === postId && post.published);
-        if(!post) {
+    // `subscribe` may return a Promise: Yoga awaits it before iterating.
+    async subscribe(parent, {postId}, { prisma, pubsub }, info) {
+        const id = toId(postId, "postId");
+
+        const post = await prisma.post.findUnique({ where: { id } });
+
+        if(!post || !post.published) {
             throw new Error('Post not found');
         }
-      return pubsub.subscribe(`comment ${postId}`)
+
+      // The channel name must match what Mutation.js publishes. Both sides
+      // interpolate the numeric id, so they agree on "comment 10".
+      return pubsub.subscribe(`comment ${id}`)
     },
   },
   post: {

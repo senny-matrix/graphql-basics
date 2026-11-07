@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { createSchema, createYoga, createPubSub } from "graphql-yoga";
-import db from './db.js';
+import prisma from './prisma.js';
 import Comment from "./resolvers/Comment.js";
 import Mutation from "./resolvers/Mutation.js";
 import Post from "./resolvers/Post.js";
@@ -25,7 +25,9 @@ const typeDefs = readFileSync(new URL('./schema.graphql', import.meta.url), 'utf
 
 const yoga = createYoga({
   schema: createSchema({ typeDefs, resolvers }),
-  context: () => ({ db, pubsub }),
+  // Every resolver now receives `prisma` instead of the in-memory `db`. The
+  // Prisma client is a singleton, so one instance serves all requests.
+  context: () => ({ prisma, pubsub }),
   // Learning project: always surface the real error message instead of a generic
   // "Unexpected error." so validation failures are visible in GraphiQL.
   maskedErrors: false,
